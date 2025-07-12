@@ -1,0 +1,31 @@
+{
+  "name": "felix_service_2",
+  "version": "1.0.0",
+  "main": "dist/app.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/app.js",
+    "dev": "ts-node src/app.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.50.5",
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0",
+    "json-schema": "^0.4.0",
+    "node-fetch": "^3.3.2",
+    "stellar-sdk": "^13.3.0",
+    "urijs": "^1.19.11",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.0.13",
+    "@types/urijs": "^1.19.25",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
