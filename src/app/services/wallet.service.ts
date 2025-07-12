@@ -1,18 +1,19 @@
 import * as StellarSdk from 'stellar-sdk';
 import fetch from 'node-fetch';
-import { saveWallet, getWallets } from '../dao/wallet.dao';
+import { saveWallet, getWallets, getWalletAmountsByKeypair, saveWalletAmounts } from '../dao/wallet.dao';
 import { supabase, Profile } from '../../config/supabase';
 import { generatePassword } from '../../utils/passwordGenerator';
 import { v4 as uuidv4 } from 'uuid';
+import { STELLAR_CONFIG, getNetworkPassphrase, validateStellarConfig } from '../../config/stellar';
 
-const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org');
+// Initialize Stellar server with configuration
+const server = new StellarSdk.Horizon.Server(STELLAR_CONFIG.HORIZON_URL);
 
-// Replace with your actual issuer account keys
-const issuerPublicKey = 'GCJEZGVNCFA5756AMGYPDLBBAXJXQ2GEROQPGEK67VNYU6ADF5R5M7G5';
-const issuerSecretKey = 'SBJDMLMT5BLBVRZTMY4LXUVKP3Y26Z3HTBI5TJCNJWT7YRFIIQXFOICS';
+// Validate configuration on startup
+validateStellarConfig();
 
-// Define custom asset
-const blueDollar = new StellarSdk.Asset('BD', issuerPublicKey);
+// Define custom asset using configuration
+const blueDollar = new StellarSdk.Asset(STELLAR_CONFIG.CUSTOM_ASSET_CODE, STELLAR_CONFIG.ISSUER_PUBLIC_KEY);
 
 // Fund new account using Friendbot (testnet only)
 const fundAccount = async (publicKey: string) => {
@@ -29,7 +30,7 @@ const createTrustline = async (secret: string) => {
 
   const transaction = new StellarSdk.TransactionBuilder(account, {
     fee: String(await server.fetchBaseFee()),
-    networkPassphrase: StellarSdk.Networks.TESTNET,
+    networkPassphrase: getNetworkPassphrase(),
   })
     .addOperation(StellarSdk.Operation.changeTrust({
       asset: blueDollar,
@@ -61,7 +62,7 @@ const sendBlueDollar = async (senderSecret: string, receiverPublic: string, amou
 
   const transaction = new StellarSdk.TransactionBuilder(senderAccount, {
     fee: String(await server.fetchBaseFee()),
-    networkPassphrase: StellarSdk.Networks.TESTNET,
+    networkPassphrase: getNetworkPassphrase(),
   })
     .addOperation(StellarSdk.Operation.payment({
       destination: receiverPublic,
@@ -78,7 +79,7 @@ const sendBlueDollar = async (senderSecret: string, receiverPublic: string, amou
 // Check issuer account status
 const checkIssuerAccount = async () => {
   try {
-    const issuerKeypair = StellarSdk.Keypair.fromSecret(issuerSecretKey);
+    const issuerKeypair = StellarSdk.Keypair.fromSecret(STELLAR_CONFIG.ISSUER_SECRET_KEY);
     const issuerAccount = await server.loadAccount(issuerKeypair.publicKey());
     console.log("Issuer account loaded successfully");
     
@@ -122,7 +123,7 @@ export const createAccountWithDetails = async (userData: {
     await createTrustline(secretKey);
     
     console.log("Sending 500 BD to account");
-    await sendBlueDollar(issuerSecretKey, publicKey, '500');
+    await sendBlueDollar(STELLAR_CONFIG.ISSUER_SECRET_KEY, publicKey, '500');
     
     // Prepare profile data for Supabase
     const now = new Date().toISOString();
@@ -195,10 +196,10 @@ export const createTwoWallets = async () => {
     await createTrustline(receiver.secret());
 
     console.log("Sending 500 BD to sender");
-    await sendBlueDollar(issuerSecretKey, sender.publicKey(), '500');
+    await sendBlueDollar(STELLAR_CONFIG.ISSUER_SECRET_KEY, sender.publicKey(), '500');
     
     console.log("Sending 500 BD to receiver");
-    await sendBlueDollar(issuerSecretKey, receiver.publicKey(), '500');
+    await sendBlueDollar(STELLAR_CONFIG.ISSUER_SECRET_KEY, receiver.publicKey(), '500');
 
     const savedSender = await saveWallet('sender', sender.publicKey(), sender.secret());
     const savedReceiver = await saveWallet('receiver', receiver.publicKey(), receiver.secret());
@@ -223,7 +224,7 @@ export const makePaymentBetweenWallets = async () => {
 
   const transaction = new StellarSdk.TransactionBuilder(senderAccount, {
     fee: String(await server.fetchBaseFee()),
-    networkPassphrase: StellarSdk.Networks.TESTNET,
+    networkPassphrase: getNetworkPassphrase(),
   })
     .addOperation(StellarSdk.Operation.payment({
       destination: receiver.publicKey,
@@ -254,7 +255,7 @@ export const makeCustomPayment = async (
 
   const transaction = new StellarSdk.TransactionBuilder(senderAccount, {
     fee: String(await server.fetchBaseFee()),
-    networkPassphrase: StellarSdk.Networks.TESTNET,
+    networkPassphrase: getNetworkPassphrase(),
   })
     .addOperation(StellarSdk.Operation.payment({
       destination: receiverPublic,
@@ -290,8 +291,8 @@ export const makeBDPayment = async (
     // Check if sender has trustline for BD asset
     const hasTrustline = senderAccount.balances.some(balance => 
       balance.asset_type === 'credit_alphanum4' && 
-      balance.asset_code === 'BD' && 
-      balance.asset_issuer === issuerPublicKey
+      balance.asset_code === STELLAR_CONFIG.CUSTOM_ASSET_CODE && 
+      balance.asset_issuer === STELLAR_CONFIG.ISSUER_PUBLIC_KEY
     );
 
     if (!hasTrustline) {
@@ -301,8 +302,8 @@ export const makeBDPayment = async (
     // Check if sender has enough BD balance
     const bdBalance = senderAccount.balances.find(balance => 
       balance.asset_type === 'credit_alphanum4' && 
-      balance.asset_code === 'BD' && 
-      balance.asset_issuer === issuerPublicKey
+      balance.asset_code === STELLAR_CONFIG.CUSTOM_ASSET_CODE && 
+      balance.asset_issuer === STELLAR_CONFIG.ISSUER_PUBLIC_KEY
     );
 
     if (!bdBalance || parseFloat(bdBalance.balance) < parseFloat(amount)) {
@@ -311,7 +312,7 @@ export const makeBDPayment = async (
 
     const transaction = new StellarSdk.TransactionBuilder(senderAccount, {
       fee: String(await server.fetchBaseFee()),
-      networkPassphrase: StellarSdk.Networks.TESTNET,
+      networkPassphrase: getNetworkPassphrase(),
     })
       .addOperation(StellarSdk.Operation.payment({
         destination: receiverPublic,
@@ -370,4 +371,146 @@ export const logTransaction = async ({
 
   if (error) throw new Error(`Failed to log transaction: ${error.message}`);
   return data?.[0];
+};
+
+export const createTransactionRequest = async ({
+  sender_id,
+  receiver_id,
+  amount,
+  currency,
+  price,
+  memo,
+  xdr
+}: {
+  sender_id: string,
+  receiver_id: string,
+  amount: string,
+  currency: string,
+  price: string,
+  memo?: string,
+  xdr?: string | null
+}) => {
+  const { data, error } = await supabase
+    .from('services')
+    .insert([
+      {
+        id: uuidv4(),
+        sender_id,
+        receiver_id,
+        amount,
+        currency,
+        price,
+        memo,
+        xdr,
+        status: 'pending',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ])
+    .select();
+  if (error) throw new Error(error.message);
+  return data?.[0];
+};
+
+// Get wallet amounts by user keypair
+export const getWalletAmounts = async (userSecret: string) => {
+  try {
+    console.log('Starting getWalletAmounts with userSecret:', userSecret ? '***' : 'missing');
+    
+    // Validate secret key format
+    if (!userSecret || typeof userSecret !== 'string') {
+      throw new Error('Invalid userSecret: must be a non-empty string');
+    }
+    
+    if (!userSecret.startsWith('S')) {
+      throw new Error('Invalid userSecret format: must be a valid Stellar secret key starting with S');
+    }
+    
+    if (userSecret.length !== 56) {
+      throw new Error('Invalid userSecret length: must be 56 characters');
+    }
+    
+    // First, get user data from DAO
+    console.log('Getting user data from DAO...');
+    const userData = await getWalletAmountsByKeypair(userSecret);
+    console.log('User data retrieved:', {
+      found_in_database: userData.found_in_database,
+      username: userData.username
+    });
+    
+    // Get Stellar account data
+    console.log('Creating Stellar keypair...');
+    const userKeypair = StellarSdk.Keypair.fromSecret(userSecret);
+    console.log('User public key:', userKeypair.publicKey());
+    
+    console.log('Loading Stellar account...');
+    const userAccount = await server.loadAccount(userKeypair.publicKey());
+    console.log('Stellar account loaded successfully');
+    
+    // Get XLM balance
+    const xlmBalance = userAccount.balances.find(balance => balance.asset_type === 'native');
+    const xlmAmount = xlmBalance ? xlmBalance.balance : '0';
+    console.log('XLM balance:', xlmAmount);
+    
+    // Get BD balance
+    const bdBalance = userAccount.balances.find(balance => 
+      balance.asset_type === 'credit_alphanum4' && 
+      balance.asset_code === STELLAR_CONFIG.CUSTOM_ASSET_CODE && 
+      balance.asset_issuer === STELLAR_CONFIG.ISSUER_PUBLIC_KEY
+    );
+    const bdAmount = bdBalance ? bdBalance.balance : '0';
+    console.log('BD balance:', bdAmount);
+    
+    // Check if user has trustline for BD
+    const hasTrustline = userAccount.balances.some(balance => 
+      balance.asset_type === 'credit_alphanum4' && 
+      balance.asset_code === STELLAR_CONFIG.CUSTOM_ASSET_CODE && 
+      balance.asset_issuer === STELLAR_CONFIG.ISSUER_PUBLIC_KEY
+    );
+    console.log('Has BD trustline:', hasTrustline);
+    
+    // Save wallet amounts to database for tracking
+    const walletBalanceData = {
+      public_key: userKeypair.publicKey(),
+      xlm_balance: xlmAmount,
+      bd_balance: bdAmount,
+      has_bd_trustline: hasTrustline
+    };
+    
+    console.log('Saving wallet amounts to database...');
+    await saveWalletAmounts(walletBalanceData);
+    console.log('Wallet amounts saved successfully');
+    
+    return {
+      public_key: userKeypair.publicKey(),
+      balances: {
+        xlm: xlmAmount,
+        bd: bdAmount
+      },
+      has_bd_trustline: hasTrustline,
+      account_id: userAccount.id,
+      user_info: {
+        found_in_database: userData.found_in_database,
+        username: userData.username,
+        email: userData.email
+      }
+    };
+  } catch (error) {
+    console.error("Error getting wallet amounts:", error);
+    
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes('invalid encoded string')) {
+        throw new Error('Invalid Stellar secret key format. Please provide a valid secret key starting with S');
+      } else if (error.message.includes('Account not found')) {
+        throw new Error('Stellar account not found. The account may not exist or may not be funded');
+      } else if (error.message.includes('Network error')) {
+        throw new Error('Network error connecting to Stellar. Please try again later');
+      } else {
+        throw new Error(`Failed to get wallet amounts: ${error.message}`);
+      }
+    }
+    
+    throw error;
+  }
 };
