@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
-import { createTwoWallets, makeCustomPayment, makeBDPayment, createTrustlineForAccount, createAccountWithDetails, logTransaction } from '../services/wallet.service';
+import { createTwoWallets, makeCustomPayment, makeBDPayment, createTrustlineForAccount, createAccountWithDetails, logTransaction, createTransactionRequest, getWalletAmounts } from '../services/wallet.service';
 import fetch from 'node-fetch';
 import { supabase } from '../../config/supabase';
+import * as StellarSdk from 'stellar-sdk';
+import { v4 as uuidv4 } from 'uuid';
 
 export const createWalletsHandler = async (_req: Request, res: Response) => {
   try {
@@ -161,5 +163,185 @@ export const getPersonsByAdminHandler = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Handler error:', error);
     res.status(500).json({ error: (error as Error).message });
+  }
+};
+
+// API 1: Create Transaction Request
+export const createStellarTransactionRequestHandler = async (req: Request, res: Response) => {
+  try {
+    const { sender_id, receiver_id, amount, currency, price, memo, multi_sig } = req.body;
+    if (!sender_id || !receiver_id || !amount || !currency || !price) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    let xdr = null;
+    if (multi_sig) {
+      // Load sender account to get the correct sequence number
+      const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org');
+      const senderAccount = await server.loadAccount(sender_id);
+      const tx = new StellarSdk.TransactionBuilder(
+        senderAccount,
+        {
+          fee: '100',
+          networkPassphrase: StellarSdk.Networks.TESTNET,
+        }
+      )
+        .addOperation(StellarSdk.Operation.payment({
+          destination: receiver_id,
+          asset: currency === 'XLM' ? StellarSdk.Asset.native() : new StellarSdk.Asset(currency, sender_id),
+          amount: amount.toString(),
+        }))
+        .addMemo(memo ? StellarSdk.Memo.text(memo) : StellarSdk.Memo.none())
+        .setTimeout(86400) // 1 day
+        .build();
+      xdr = tx.toXDR();
+    }
+
+    // Use the service function to insert
+    const request = await createTransactionRequest({
+      sender_id,
+      receiver_id,
+      amount,
+      currency,
+      price,
+      memo,
+      xdr
+    });
+    res.status(201).json({ request });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
+// API 2: Accept Transaction Request (single or multi-sig)
+export const acceptStellarTransactionRequestHandler = async (req: Request, res: Response) => {
+  try {
+    const { request_id, signer_secret, multi_sig } = req.body;
+    if (!request_id || !signer_secret) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    // Fetch the transaction request from services table
+    const { data, error } = await supabase
+      .from('services')
+      .select('*')
+      .eq('id', request_id)
+      .single();
+    if (error || !data) {
+      return res.status(404).json({ error: 'Transaction request not found' });
+    }
+    let tx;
+    if (data.xdr) {
+      // Multi-sig: add signature
+      tx = new StellarSdk.Transaction(data.xdr, StellarSdk.Networks.TESTNET);
+      const signerKeypair = StellarSdk.Keypair.fromSecret(signer_secret);
+      // Debug: log transaction source and signing public key
+      console.log('Transaction source account:', tx.source);
+      console.log('Signing public key:', signerKeypair.publicKey());
+      tx.sign(signerKeypair);
+      const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org');
+      try {
+        const result = await server.submitTransaction(tx);
+        // Update status in DB
+        await supabase
+          .from('services')
+          .update({ status: 'success', xdr: tx.toXDR() })
+          .eq('id', request_id);
+        return res.json({ message: 'Transaction submitted', hash: result.hash });
+      } catch (err) {
+        const errorObj = err as any;
+        return res.status(400).json({ error: 'Stellar submission failed', details: errorObj.response?.data || errorObj.message });
+      }
+    }
+    // Single-sig: build, sign, and submit
+    const senderKeypair = StellarSdk.Keypair.fromSecret(signer_secret);
+    const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org');
+    const senderAccount = await server.loadAccount(senderKeypair.publicKey());
+    tx = new StellarSdk.TransactionBuilder(senderAccount, {
+      fee: '100',
+      networkPassphrase: StellarSdk.Networks.TESTNET,
+    })
+      .addOperation(StellarSdk.Operation.payment({
+        destination: data.receiver_id,
+        asset: data.currency === 'XLM' ? StellarSdk.Asset.native() : new StellarSdk.Asset(data.currency, senderKeypair.publicKey()),
+        amount: data.amount.toString(),
+      }))
+      .addMemo(data.memo ? StellarSdk.Memo.text(data.memo) : StellarSdk.Memo.none())
+      .setTimeout(86400) // 1 day
+      .build();
+    // Debug: log transaction source and signing public key
+    console.log('Transaction source account:', tx.source);
+    console.log('Signing public key:', senderKeypair.publicKey());
+    tx.sign(senderKeypair);
+    try {
+      const result = await server.submitTransaction(tx);
+      await supabase
+        .from('services')
+        .update({ status: 'success', xdr: tx.toXDR() })
+        .eq('id', request_id);
+      return res.json({ message: 'Transaction submitted', hash: result.hash });
+    } catch (err) {
+      const errorObj = err as any;
+      return res.status(400).json({ error: 'Stellar submission failed', details: errorObj.response?.data || errorObj.message });
+    }
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
+// Get wallet amounts by user keypair
+export const getWalletAmountsHandler = async (req: Request, res: Response) => {
+  try {
+    console.log('Get wallet amounts request received:', {
+      userSecret: req.body.userSecret ? '***' : 'missing'
+    });
+    
+    const { userSecret } = req.body;
+    
+    if (!userSecret) {
+      return res.status(400).json({ 
+        error: 'Missing required field: userSecret' 
+      });
+    }
+
+    // Validate userSecret format
+    if (typeof userSecret !== 'string') {
+      return res.status(400).json({ 
+        error: 'userSecret must be a string' 
+      });
+    }
+
+    if (!userSecret.startsWith('S')) {
+      return res.status(400).json({ 
+        error: 'Invalid userSecret format. Must be a valid Stellar secret key starting with S' 
+      });
+    }
+
+    if (userSecret.length !== 56) {
+      return res.status(400).json({ 
+        error: 'Invalid userSecret length. Must be 56 characters' 
+      });
+    }
+
+    console.log('Calling getWalletAmounts service...');
+    const result = await getWalletAmounts(userSecret);
+    console.log('Get wallet amounts successful');
+    res.json(result);
+  } catch (err) {
+    console.error('Get wallet amounts error:', err);
+    
+    // Return appropriate HTTP status based on error type
+    if (err instanceof Error) {
+      if (err.message.includes('Invalid userSecret') || err.message.includes('Invalid Stellar secret key')) {
+        return res.status(400).json({ error: err.message });
+      } else if (err.message.includes('Account not found')) {
+        return res.status(404).json({ error: err.message });
+      } else if (err.message.includes('Network error')) {
+        return res.status(503).json({ error: err.message });
+      } else {
+        return res.status(500).json({ error: err.message });
+      }
+    }
+    
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
