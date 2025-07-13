@@ -13,9 +13,11 @@
   "description": "",
   "dependencies": {
     "@supabase/supabase-js": "^2.50.5",
+    "bcrypt": "^6.0.0",
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
     "json-schema": "^0.4.0",
+    "jsonwebtoken": "^9.0.2",
     "node-fetch": "^3.3.2",
     "stellar-sdk": "^13.3.0",
     "urijs": "^1.19.11",
