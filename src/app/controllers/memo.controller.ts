@@ -3,7 +3,7 @@ import { createMemo, payForMemo } from '../services/memo.service';
 
 export const createMemoHandler = async (req: Request, res: Response) => {
   try {
-    const { creatorKey, memo, bdAmount, assetId } = req.body;
+    const { creatorKey, memo, bdAmount, assetId, description, rating } = req.body;
     
     // Validate required fields
     if (!creatorKey || !memo || !bdAmount || !assetId) {
@@ -12,7 +12,7 @@ export const createMemoHandler = async (req: Request, res: Response) => {
       });
     }
 
-    const result = await createMemo(creatorKey, memo, bdAmount, assetId);
+    const result = await createMemo(creatorKey, memo, bdAmount, assetId,description, rating );
     res.status(201).json(result);
   } catch (err) {
     console.error('Create memo error:', err);
