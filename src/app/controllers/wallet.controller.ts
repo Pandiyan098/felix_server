@@ -351,8 +351,9 @@ export const getAllServicesHandler = async (req: Request, res: Response) => {
   try {
     const limit = parseInt(req.query.limit as string) || 10;
     const offset = parseInt(req.query.offset as string) || 0;
-    const { data, count } = await getAllServices(limit, offset);
-    res.json({ services: data, total: count, limit, offset });
+    const status = req.query.status as string | undefined;
+    const { data, count } = await getAllServices(limit, offset, status);
+    res.json({ services: data, total: count, limit, offset, status });
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }

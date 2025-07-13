@@ -89,13 +89,17 @@ export const saveWalletAmounts = async (userData: {
   }
 };
 
-// Fetch all services from the 'services' table with pagination
-export const getAllServicesFromDB = async (limit: number, offset: number) => {
-  const { data, error, count } = await supabase
+// Fetch all services from the 'services' table with pagination and optional status filter
+export const getAllServicesFromDB = async (limit: number, offset: number, status?: string) => {
+  let query = supabase
     .from('services')
     .select('*', { count: 'exact' })
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
+  if (true) {
+    query = query.eq('status', status || "pending");
+  }
+  const { data, error, count } = await query;
   if (error) throw new Error(error.message);
   return { data, count };
 };

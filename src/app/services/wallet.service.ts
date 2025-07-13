@@ -413,8 +413,8 @@ export const createTransactionRequest = async ({
 };
 
 // Fetch all services from the 'services' table
-export const getAllServices = async (limit: number, offset: number) => {
-  return await getAllServicesFromDB(limit, offset);
+export const getAllServices = async (limit: number, offset: number, status?: string) => {
+  return await getAllServicesFromDB(limit, offset, status);
 };
 
 // Get wallet amounts by user keypair
