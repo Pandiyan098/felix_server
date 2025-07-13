@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { createTwoWallets, makeCustomPayment, makeBDPayment, createTrustlineForAccount, createAccountWithDetails, logTransaction, createTransactionRequest, getWalletAmounts } from '../services/wallet.service';
+import { createTwoWallets, makeCustomPayment, makeBDPayment, createTrustlineForAccount, createAccountWithDetails, logTransaction, createTransactionRequest, getWalletAmounts, getAllServices } from '../services/wallet.service';
 import fetch from 'node-fetch';
 import { supabase } from '../../config/supabase';
 import * as StellarSdk from 'stellar-sdk';
@@ -343,5 +343,17 @@ export const getWalletAmountsHandler = async (req: Request, res: Response) => {
     }
     
     res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Handler to fetch all services
+export const getAllServicesHandler = async (req: Request, res: Response) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 10;
+    const offset = parseInt(req.query.offset as string) || 0;
+    const { data, count } = await getAllServices(limit, offset);
+    res.json({ services: data, total: count, limit, offset });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
   }
 };

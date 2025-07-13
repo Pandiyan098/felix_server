@@ -1,6 +1,6 @@
 import * as StellarSdk from 'stellar-sdk';
 import fetch from 'node-fetch';
-import { saveWallet, getWallets, getWalletAmountsByKeypair, saveWalletAmounts } from '../dao/wallet.dao';
+import { saveWallet, getWallets, getWalletAmountsByKeypair, saveWalletAmounts, getAllServicesFromDB } from '../dao/wallet.dao';
 import { supabase, Profile } from '../../config/supabase';
 import { generatePassword } from '../../utils/passwordGenerator';
 import { v4 as uuidv4 } from 'uuid';
@@ -410,6 +410,11 @@ export const createTransactionRequest = async ({
     .select();
   if (error) throw new Error(error.message);
   return data?.[0];
+};
+
+// Fetch all services from the 'services' table
+export const getAllServices = async (limit: number, offset: number) => {
+  return await getAllServicesFromDB(limit, offset);
 };
 
 // Get wallet amounts by user keypair
