@@ -7,7 +7,7 @@ const server = new StellarSdk.Horizon.Server(STELLAR_CONFIG.HORIZON_URL);
 // Use the same issuer public key as in wallet service
 const blueDollar = new StellarSdk.Asset(STELLAR_CONFIG.CUSTOM_ASSET_CODE, STELLAR_CONFIG.ISSUER_PUBLIC_KEY);
 
-export const createMemo = async (creatorKey: string, memo: string, bdAmount: number, assetId: string) => {
+export const createMemo = async (creatorKey: string, memo: string, bdAmount: number, assetId: string, description:string, rating: number) => {
   // Validate creatorKey format (should be a Stellar public key)
   if (!creatorKey || !creatorKey.startsWith('G')) {
     throw new Error('Invalid creatorKey: must be a valid Stellar public key starting with G');
@@ -28,7 +28,9 @@ export const createMemo = async (creatorKey: string, memo: string, bdAmount: num
     memo,
     bdAmount: parseFloat(formattedAmount), // Store as number but formatted
     assetId,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    description,
+    rating
   });
 
   return { message: 'Memo created', memoId };

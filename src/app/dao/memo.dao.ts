@@ -1,26 +1,32 @@
 import { supabase } from '../../config/supabase';
 
 export const saveMemo = async (memo: any) => {
+  console.log("saved memo:", memo);
+  
   // Ensure amount is properly formatted as a string with max 7 decimal places
   const formattedAmount = parseFloat(memo.bdAmount).toFixed(7);
   
   // Use the services table instead of memos table
-  const { data, error } = await supabase.from('services').insert({
+  const { data, error } = await supabase.from('services').insert([{
     id: memo.id,
     sender_id: memo.creatorKey,
-    receiver_id: memo.creatorKey, // For memos, creator is both sender and receiver
+    receiver_id: memo.creatorKey,
     amount: formattedAmount,
     currency: memo.assetId,
     price: formattedAmount,
     memo: memo.memo,
     status: 'pending',
     created_at: memo.timestamp,
-    updated_at: memo.timestamp
-  });
+    updated_at: memo.timestamp,
+    description: memo.description,
+    rating: memo.rating
+  }]).select();
   if (error) {
     console.error('Supabase save memo error:', error);
     throw new Error(`Failed to save memo: ${error.message || error.details || 'Unknown error'}`);
   }
+  console.log("data", data);
+  
   return data;
 };
 
