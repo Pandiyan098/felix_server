@@ -9,7 +9,8 @@ import {
   getPersonsByAdminHandler,
   createStellarTransactionRequestHandler,
   acceptStellarTransactionRequestHandler,
-  getWalletAmountsHandler
+  getWalletAmountsHandler,
+  getAllServicesHandler
 } from '../controllers/wallet.controller';
 
 const router = express.Router();
@@ -38,6 +39,7 @@ router.get('/transactions/by-user', getTransactionsByUserHandler);
 router.get('/persons/by-admin', getPersonsByAdminHandler);
 router.get('/test', (req, res) => res.send('Test route works!'));
 router.post('/wallets/amounts', getWalletAmountsHandler);
+router.get('/services/all', getAllServicesHandler);
 
 export default router;
 
