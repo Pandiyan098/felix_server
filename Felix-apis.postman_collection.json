@@ -1,0 +1,619 @@
+{
+	"info": {
+		"_postman_id": "f20fa71f-3a30-4d17-b038-4d180f6e052b",
+		"name": "Felix-apis",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "43525822",
+		"_collection_link": "https://itwillbe.postman.co/workspace/Itwillbe-Workspace~61492038-f82a-4836-9dcb-2a44dbb6ee81/collection/43525822-f20fa71f-3a30-4d17-b038-4d180f6e052b?action=share&source=collection_link&creator=43525822"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "1. Get Keycloak Login Redirect URL",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login?redirect_uri={{callbackRedirectUri}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							],
+							"query": [
+								{
+									"key": "redirect_uri",
+									"value": "{{callbackRedirectUri}}"
+								}
+							]
+						},
+						"description": "Initiates the Keycloak login flow. Copy the URL from the response and paste it into your browser to log in via Keycloak. After successful login, Keycloak will redirect back to your backend's callback URI."
+					},
+					"response": []
+				},
+				{
+					"name": "2. Handle Keycloak Callback",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.environment.set(\"accessToken\", jsonData.accessToken);",
+									"pm.environment.set(\"refreshToken\", jsonData.refreshToken);",
+									"pm.environment.set(\"userId\", jsonData.user.id);",
+									"pm.environment.set(\"userRole\", jsonData.user.role);",
+									"console.log(\"Access Token: \" + jsonData.accessToken);",
+									"console.log(\"Refresh Token: \" + jsonData.refreshToken);",
+									"console.log(\"User ID: \" + jsonData.user.id);",
+									"console.log(\"User Role: \" + jsonData.user.role);",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/callback?code=YOUR_CODE_FROM_BROWSER_REDIRECT&state=YOUR_STATE_FROM_BROWSER_REDIRECT",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"callback"
+							],
+							"query": [
+								{
+									"key": "code",
+									"value": "YOUR_CODE_FROM_BROWSER_REDIRECT",
+									"description": "Paste the 'code' query parameter from the browser's redirect URL after Keycloak login."
+								},
+								{
+									"key": "state",
+									"value": "YOUR_STATE_FROM_BROWSER_REDIRECT",
+									"description": "Paste the 'state' query parameter (which should be your callbackRedirectUri) from the browser's redirect URL after Keycloak login."
+								}
+							]
+						},
+						"description": "Handles the redirect from Keycloak. This request's 'Tests' tab automatically extracts and sets the accessToken, refreshToken, userId, and userRole environment variables. You must manually paste the 'code' and 'state' from the browser's redirect URL into the query parameters before sending this request."
+					},
+					"response": []
+				},
+				{
+					"name": "3. Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/logout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"logout"
+							]
+						},
+						"description": "Logs out the current user. Requires an active access token."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "Assign Role (Super Admin Only)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": \"{{regularUserId}}\",\n    \"role\": \"table_admin\",\n    \"tableAdminId\": \"{{superAdminUserId}}\" \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/assign-role",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"assign-role"
+							]
+						},
+						"description": "Assigns a role to a user. Requires a Super Admin access token. Update 'userId' to the target user's Keycloak ID and 'role' to 'table_admin' or 'user'. If role is 'user', 'tableAdminId' is required."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Wallet For User (Super Admin Only)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/create-wallet/{{regularUserId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"create-wallet",
+								"{{regularUserId}}"
+							]
+						},
+						"description": "Creates a Stellar wallet for a specified user. Requires a Super Admin access token. Replace ':userId' with the target user's Keycloak ID."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Products",
+			"item": [
+				{
+					"name": "Post Product (Table Admin Only)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.environment.set(\"productId\", jsonData.product.id);",
+									"console.log(\"Product ID: \" + jsonData.product.id);",
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Sample Product\",\n    \"description\": \"This is a description for the sample product.\",\n    \"price\": 10.50\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/products",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"products"
+							]
+						},
+						"description": "Posts a new product. Requires a Table Admin access token. The 'Tests' tab will extract the product ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Products",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/products",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"products"
+							]
+						},
+						"description": "Retrieves all products. Requires any authenticated user's access token."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Product By ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/products/{{productId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"{{productId}}"
+							]
+						},
+						"description": "Retrieves a product by its ID. Requires any authenticated user's access token. Uses the 'productId' environment variable."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Transactions",
+			"item": [
+				{
+					"name": "Request Purchase (User Only)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.environment.set(\"transactionId\", jsonData.transaction.id);",
+									"console.log(\"Transaction ID: \" + jsonData.transaction.id);",
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"productId\": \"{{productId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/transactions/request-purchase",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"transactions",
+								"request-purchase"
+							]
+						},
+						"description": "Requests a purchase of a product. Requires a regular user's access token. Uses the 'productId' environment variable. The 'Tests' tab extracts the transaction ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Pending Transactions (Table Admin Only)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/transactions/pending",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"transactions",
+								"pending"
+							]
+						},
+						"description": "Retrieves all pending transactions for the authenticated Table Admin. Requires a Table Admin access token."
+					},
+					"response": []
+				},
+				{
+					"name": "Approve and Pay Transaction (Table Admin Only)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"transactionId\": \"{{transactionId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/transactions/approve-and-pay",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"transactions",
+								"approve-and-pay"
+							]
+						},
+						"description": "Approves a pending transaction and initiates the Stellar payment. Requires a Table Admin access token. Uses the 'transactionId' environment variable."
+					},
+					"response": []
+				},
+				{
+					"name": "Reject Purchase (Table Admin Only)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"transactionId\": \"{{transactionId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/transactions/reject-purchase",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"transactions",
+								"reject-purchase"
+							]
+						},
+						"description": "Rejects a pending purchase request. Requires a Table Admin access token. Uses the 'transactionId' environment variable."
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Transactions (User/Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/transactions/my-transactions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"transactions",
+								"my-transactions"
+							]
+						},
+						"description": "Retrieves transactions associated with the authenticated user. Requires any authenticated user's access token."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "without-keycloak",
+			"item": [
+				{
+					"name": "createWallet",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "send-bd",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "Bd-transfer",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"senderSecret\": \"SBJDMLMT5BLBVRZTMY4LXUVKP3Y26Z3HTBI5TJCNJWT7YRFIIQXFOICS\", \n  \"receiverPublic\": \"GCPVEYAT2R6EYGUZAFRN4UXOW46XPZTZ6LB35JU7SB7TTTQMKXTFKOJY\",\n  \"amount\": \"10\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/wallets/pay-bd",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"wallets",
+								"pay-bd"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "createUserandWallet",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "getUsersbyAdminid",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "get-transactions-by-id",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "create-request",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "accept-request",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "create-memo",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"creatorKey\": \"GDVSLJFVO5OXHTHGOFLD6MXZUVWIWHSCIRM2JFFOAHEIQEIB3XOA72KS\",\n  \"memo\": \"Payment for services\",\n  \"bdAmount\": 5,\n  \"assetId\": \"BD\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/memos/create",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"memos",
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "pay-for-memo",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "get-wallet-details-by-key",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
