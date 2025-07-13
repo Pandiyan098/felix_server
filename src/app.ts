@@ -4,13 +4,14 @@ import memoRoutes from './app/routes/memo.routes';
 import authRoutes from './app/routes/auth.routs';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
+import cors from 'cors';
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
 app.use(bodyParser.json());
-
+app.use(cors());
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
