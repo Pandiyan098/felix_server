@@ -16,7 +16,7 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-app.use('/api/auth', authRoutes);
+app.use('/api/fetch', authRoutes);
 app.use('/api', walletRoutes);
 app.use('/api/memos', memoRoutes);
 
