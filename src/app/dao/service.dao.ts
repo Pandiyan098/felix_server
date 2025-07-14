@@ -1,9 +1,12 @@
 import { supabase } from '../../config/supabase';
+import { ServiceProposal } from '../models/proposal.models';
 
-export const createRequest = async (clientKey: string, description: string, budget: number) => {
+export const createRequest = async (clientKey: string, description: string, budget: number, title: string, requirements: string) => {
+  console.log('Creating service request with data:', { clientKey, description, budget, title, requirements });
+  
   const { data, error } = await supabase
     .from('service_requests')
-    .insert([{ client_key: clientKey, description, budget }])
+    .insert([{ client_key: clientKey, description, budget, title, requirements }])
     .select()
     .single();
   if (error) throw error;
@@ -69,3 +72,18 @@ export const getServicesDao = async () => {
   if (error) throw error;
   return data;
 }
+
+export const getAllProposalsByRequestId = async (requestId: string): Promise<ServiceProposal[]> => {
+  console.log('Fetching proposals for requestId:', requestId);
+  const { data, error } = await supabase
+    .from('service_proposals')
+    .select('*')
+    .eq('request_id', requestId);
+
+  if (error) {
+    console.error('Error fetching proposals:', error);
+    throw new Error(`Failed to fetch proposals: ${error.message}`);
+  }
+
+  return data as ServiceProposal[];
+};
