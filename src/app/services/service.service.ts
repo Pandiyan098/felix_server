@@ -93,7 +93,7 @@ import {
   updateProposalStatus,
   updateRequestStatus,
   getProposalById,
-  getRequestById
+  getRequestById,getServicesDao
 } from '../dao/service.dao';
 import StellarSdk from 'stellar-sdk';
 
@@ -188,3 +188,13 @@ export const payForService = async ({
     throw new Error(`Payment failed: ${reason}`);
   }
 };
+
+
+export const getAllService = async () => {
+  try {
+    const services = await getServicesDao();
+    return services;
+  } catch (error) {
+    throw new Error('Failed to retrieve services');
+  }
+}
