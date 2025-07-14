@@ -13,5 +13,5 @@ router.post('/services/request', createServiceRequest);
 router.post('/services/propose', proposeService);
 router.post('/services/accept-proposal', acceptProposal);
 router.post('/services/pay', payForService);
-router.get('/services/all', getAllService)
+router.get('/services/request', getAllService)
 export default router;
