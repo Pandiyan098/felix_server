@@ -292,15 +292,14 @@ export const acceptStellarTransactionRequestHandler = async (req: Request, res: 
 // Get wallet amounts by user keypair
 export const getWalletAmountsHandler = async (req: Request, res: Response) => {
   try {
+    const { userSecret } = req.query;
     console.log('Get wallet amounts request received:', {
-      userSecret: req.body.userSecret ? '***' : 'missing'
+      userSecret: userSecret ? '***' : 'missing (query param)'
     });
-    
-    const { userSecret } = req.body;
     
     if (!userSecret) {
       return res.status(400).json({ 
-        error: 'Missing required field: userSecret' 
+        error: 'Missing required field: userSecret (as query parameter)' 
       });
     }
 
