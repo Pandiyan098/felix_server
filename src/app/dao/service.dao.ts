@@ -60,3 +60,12 @@ export const getRequestById = async (requestId: string) => {
   if (error) throw error;
   return data;
 };
+
+  
+export const getServicesDao = async () => {
+  const { data, error } = await supabase
+    .from('service_requests')
+    .select('*');
+  if (error) throw error;
+  return data;
+}

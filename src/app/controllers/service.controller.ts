@@ -40,3 +40,14 @@ export const payForService = async (req: Request, res: Response) => {
     res.status(500).json({ error: message });
   }
 };
+
+
+export const getAllService = async (req: Request, res: Response) => {
+  try {
+    const data = await ServiceService.getAllService();
+    res.json(data);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    res.status(500).json({ error: message });
+  }
+};
