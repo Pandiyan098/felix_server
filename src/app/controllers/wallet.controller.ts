@@ -122,14 +122,15 @@ export const createTrustlineHandler = async (req: Request, res: Response) => {
 
 export const getTransactionsByUserHandler = async (req: Request, res: Response) => {
   try {
-    const { user_id } = req.query;
+    const { user_id, status } = req.query;
     if (!user_id || typeof user_id !== 'string') {
       return res.status(400).json({ error: 'Missing or invalid user_id' });
     }
     const { data, error } = await supabase
-      .from('transactions')
+      .from('services')
       .select('*')
-      .eq('user_id', user_id)
+      .eq('sender_id', user_id)
+      .eq('status', status || "completed")
       .order('created_at', { ascending: false });
     if (error) {
       return res.status(500).json({ error: error.message });
