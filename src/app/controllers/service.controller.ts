@@ -51,3 +51,17 @@ export const getAllService = async (req: Request, res: Response) => {
     res.status(500).json({ error: message });
   }
 };
+
+export const getAllproposal = async (req: Request, res: Response) => {
+  
+  try {
+    const { request_id } = req.query ;
+    console.log('Received requestId:', request_id);
+    
+    const data = await ServiceService.getAllproposal(request_id as string);
+    res.json(data);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    res.status(500).json({ error: message });
+  }
+};
