@@ -2,6 +2,7 @@ import express from 'express';
 import walletRoutes from './app/routes/wallet.routes';
 import memoRoutes from './app/routes/memo.routes';
 import authRoutes from './app/routes/auth.routs';
+import services from './app/routes/service.route';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import cors from 'cors';
@@ -19,6 +20,7 @@ app.use(express.json());
 app.use('/api/fetch', authRoutes);
 app.use('/api', walletRoutes);
 app.use('/api/memos', memoRoutes);
+app.use('/api', services)
 
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
