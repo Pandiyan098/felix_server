@@ -358,3 +358,30 @@ export const getAllServicesHandler = async (req: Request, res: Response) => {
     res.status(500).json({ error: (error as Error).message });
   }
 };
+
+export const makeBDPaymentById = async (req: Request, res: Response) => {
+  try {
+    const { senderSecret, receiverPublic, amount } = req.body;
+    if (!senderSecret || !receiverPublic || !amount) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const paymentResult = await makeBDPayment(senderSecret, receiverPublic, amount);
+    const horizonUrl = `https://horizon-testnet.stellar.org/transactions/${paymentResult.transactionHash}`;
+    try{
+      const response = await fetch(horizonUrl);
+      if (response.ok) {
+        const txData: any = await response.json();
+        if (txData.successful === true) {
+          return res.json({ message: 'Payment successful', transactionHash: paymentResult.transactionHash });
+        }
+      }
+      return res.status(400).json({ error: 'Payment not successful' });
+    } catch (err) {
+      console.error('Error checking Horizon for transaction status:', err);
+      return res.status(500).json({ error: 'Failed to check transaction status' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+}

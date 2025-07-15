@@ -60,7 +60,7 @@ export const payForService = async ({
     (b: any) =>
       b.asset_type !== 'native' &&
       b.asset_code === 'BD' &&
-      b.asset_issuer === 'GCJEZGVNCFA5756AMGYPDLBBAXJXQ2GEROQPGEK67VNYU6ADF5R5M7G5'
+      b.asset_issuer === process.env.STELLAR_ASSET_ISSUER 
   );
 
   console.log("destination trust asset", destinationTrustsAsset, bdIssuer);
