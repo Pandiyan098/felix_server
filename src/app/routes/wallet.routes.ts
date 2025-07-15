@@ -10,7 +10,8 @@ import {
   createStellarTransactionRequestHandler,
   acceptStellarTransactionRequestHandler,
   getWalletAmountsHandler,
-  getAllServicesHandler
+  getAllServicesHandler,
+  makeBDPaymentById
 } from '../controllers/wallet.controller';
 
 const router = express.Router();
@@ -41,5 +42,7 @@ router.get('/test', (req, res) => res.send('Test route works!'));
 router.get('/wallets/amounts', getWalletAmountsHandler);
 router.get('/services/all', getAllServicesHandler);
 
-export default router;
+router.post('/wallets/BdPayment', makeBDPaymentById);
 
+
+export default router;
