@@ -3,6 +3,7 @@ import walletRoutes from './app/routes/wallet.routes';
 import memoRoutes from './app/routes/memo.routes';
 import authRoutes from './app/routes/auth.routs';
 import services from './app/routes/service.route';
+import users from './app/routes/user.route';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import cors from 'cors';
@@ -21,6 +22,8 @@ app.use('/api/fetch', authRoutes);
 app.use('/api', walletRoutes);
 app.use('/api/memos', memoRoutes);
 app.use('/api', services)
+
+app.use('/api',users);
 
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
