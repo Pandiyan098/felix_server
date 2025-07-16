@@ -149,9 +149,9 @@ export const getPersonsByAdminHandler = async (req: Request, res: Response) => {
     }
     // Query the persons table for the given table_admin_id
     const { data, error } = await supabase
-      .from('profiles')
+      .from('users')
       .select('*')
-      .eq('entity_admin_name', table_admin_id)
+      .eq('entity_manager', table_admin_id)
       .order('created_at', { ascending: false });
     if (error) {
       console.error('Supabase error:', error);
