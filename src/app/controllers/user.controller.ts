@@ -36,3 +36,18 @@ export const sendBD = async (req: Request, res: Response) => {
     res.status(500).json({ error: (error as Error).message });
   }
 };
+
+export const getUsersByGroup = async (req: Request, res: Response) => {
+  try {
+    const { groupId } = req.query;
+    
+    if (!groupId) {
+      return res.status(400).json({ error: 'Group ID is required' });
+    }
+    
+    const result = await userService.getUsersByGroup(groupId as string);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};

@@ -4,6 +4,7 @@ import { supabase } from '../../config/supabase';
 import { STELLAR_CONFIG } from '../../config/stellar';
 import fetch from 'node-fetch';
 import { createKeycloakUser } from './keycloak.service';
+import * as userDao from '../dao/user.dao';
 
 const server = new StellarSdk.Horizon.Server(STELLAR_CONFIG.HORIZON_URL);
 const BD_ASSET = new StellarSdk.Asset(STELLAR_CONFIG.CUSTOM_ASSET_CODE, STELLAR_CONFIG.ISSUER_PUBLIC_KEY);
@@ -135,4 +136,27 @@ export const sendBlueDollarToUser = async (toPublicKey: string, assetCode: strin
   await supabase.from('users').update({ is_bd_received: true }).eq('public_key', toPublicKey);
 
   return { message: '500 BD sent successfully' };
+};
+
+export const getUsersByGroup = async (groupId: string) => {
+  try {
+    // Validate input
+    if (!groupId || typeof groupId !== 'string') {
+      throw new Error('Group ID is required and must be a string');
+    }
+
+    // Fetch users from the database
+    const users = await userDao.getUsersByGroup(groupId);
+    
+    // Return formatted response
+    return {
+      message: `Successfully fetched ${users.length} users for group: ${groupId}`,
+      count: users.length,
+      group_id: groupId,
+      users: users
+    };
+  } catch (error) {
+    console.error('Error in getUsersByGroup service:', error);
+    throw error;
+  }
 };
