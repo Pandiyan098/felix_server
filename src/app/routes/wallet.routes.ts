@@ -27,10 +27,6 @@ const router = express.Router();
 // router.post('/wallets/accept-transaction', acceptStellarTransactionRequestHandler);
 // router.post('/wallets/amounts', getWalletAmountsHandler);
 
-
-
-// export default router;
-
 router.post('/wallets/create', createWalletsHandler);
 router.post('/accounts/create', createAccountHandler);
 router.post('/wallets/pay', makePaymentHandler);
