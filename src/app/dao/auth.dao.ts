@@ -2,7 +2,7 @@ import { supabase } from '../../config/supabase';
 
 export const getUserByEmail = async (email: string) => {
   const { data, error } = await supabase
-    .from('profiles')
+    .from('users')
     .select('*')
     .eq('email', email)
     .limit(1); // use limit to avoid `.single()` error

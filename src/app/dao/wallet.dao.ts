@@ -25,16 +25,16 @@ export const getWallets = () => {
 // Get wallet amounts by user keypair
 export const getWalletAmountsByKeypair = async (userSecret: string) => {
   try {
-    // First, check if the user exists in our profiles table
+    // First, check if the user exists in our users table
     const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
+      .from('users')
       .select('public_key, secret_key, username, email')
       .eq('secret_key', userSecret)
       .single();
 
     if (profileError) {
       console.error('Profile lookup error:', profileError);
-      // If not found in profiles, we'll still try to get balances from Stellar
+      // If not found in users, we'll still try to get balances from Stellar
       return {
         found_in_database: false,
         public_key: null,

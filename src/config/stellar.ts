@@ -4,6 +4,8 @@ import 'dotenv/config';
 export const STELLAR_CONFIG = {
   // Network settings
   NETWORK: process.env.STELLAR_NETWORK || 'TESTNET',
+
+  
   HORIZON_URL: process.env.STELLAR_HORIZON_URL || 'https://horizon-testnet.stellar.org',
   
   // Issuer account configuration
@@ -15,7 +17,7 @@ export const STELLAR_CONFIG = {
   
   // Transaction settings
   DEFAULT_TIMEOUT: parseInt(process.env.STELLAR_DEFAULT_TIMEOUT || '30'),
-  TRANSACTION_TIMEOUT: parseInt(process.env.STELLAR_TRANSACTION_TIMEOUT || '86400'), // 1 day
+  TRANSACTION_TIMEOUT: parseInt(process.env.STELLAR_TRANSACTION_TIMEOUT || '86400'),
   
   // Friendbot URL for testnet funding
   FRIENDBOT_URL: process.env.STELLAR_FRIENDBOT_URL || 'https://friendbot.stellar.org'
@@ -23,6 +25,8 @@ export const STELLAR_CONFIG = {
 
 // Get network passphrase based on network setting
 export const getNetworkPassphrase = () => {
+  console.log("Network:", process.env.STELLAR_ISSUER_PUBLIC_KEY);
+  
   switch (STELLAR_CONFIG.NETWORK.toUpperCase()) {
     case 'MAINNET':
       return 'Public Global Stellar Network ; September 2015';
