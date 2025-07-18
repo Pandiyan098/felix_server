@@ -373,6 +373,109 @@ export const logTransaction = async ({
   return data?.[0];
 };
 
+// Enhanced transaction logging for memo payments with debit/credit entries
+export const logMemoTransaction = async ({
+  service_id,
+  sender_public_key,
+  receiver_public_key,
+  sender_user_id,
+  receiver_user_id,
+  amount,
+  currency,
+  status,
+  stellar_transaction_hash,
+  table_admin_id
+}: {
+  service_id: string,
+  sender_public_key: string,
+  receiver_public_key: string,
+  sender_user_id: string,
+  receiver_user_id: string,
+  amount: string,
+  currency?: string,
+  status?: string,
+  stellar_transaction_hash?: string,
+  table_admin_id: string
+}) => {
+  const now = new Date().toISOString();
+  const formattedAmount = parseFloat(amount).toFixed(7);
+  const transactionCurrency = currency || 'BLUEDOLLAR';
+  const transactionStatus = status || 'pending';
+  
+  // Insert summary transaction row with sender_id and receiver_id containing Stellar public keys
+  const summaryRow = {
+    product_id: service_id,
+    user_id: sender_user_id,      // Add user_id here to satisfy NOT NULL constraint
+    sender_id: sender_public_key, // Store Stellar public key
+    receiver_id: receiver_public_key, // Store Stellar public key
+    amount: formattedAmount,
+    currency: transactionCurrency,
+    status: transactionStatus,
+    stellar_transaction_hash,
+    table_admin_id,
+    created_at: now,
+    updated_at: now,
+  };
+
+  const { data: summaryData, error: summaryError } = await supabase
+    .from('transactions')
+    .insert([summaryRow])
+    .select();
+
+  if (summaryError) {
+    console.error('Failed to log summary transaction:', summaryError);
+    throw new Error(`Failed to log summary transaction: ${summaryError.message}`);
+  }
+  
+  // Create two transaction entries: one debit (sender) and one credit (receiver)
+  const transactionEntries = [
+    {
+      product_id: service_id,
+      user_id: sender_user_id,
+      sender_id: sender_public_key, // Store Stellar public key
+      receiver_id: receiver_public_key, // Store Stellar public key
+      table_admin_id,
+      amount: `-${formattedAmount}`, // Debit entry with minus sign
+      currency: transactionCurrency,
+      status: transactionStatus,
+      stellar_transaction_hash,
+      created_at: now,
+      updated_at: now
+    },
+    {
+      product_id: service_id,
+      user_id: receiver_user_id,
+      sender_id: sender_public_key, // Store Stellar public key
+      receiver_id: receiver_public_key, // Store Stellar public key
+      table_admin_id,
+      amount: `+${formattedAmount}`, // Credit entry with plus sign
+      currency: transactionCurrency,
+      status: transactionStatus,
+      stellar_transaction_hash,
+      created_at: now,
+      updated_at: now
+    }
+  ];
+  
+  // Insert both debit/credit entries
+  const { data, error } = await supabase
+    .from('transactions')
+    .insert(transactionEntries)
+    .select();
+
+  if (error) {
+    console.error('Failed to log debit/credit memo transaction:', error);
+    throw new Error(`Failed to log memo transaction: ${error.message}`);
+  }
+  
+  return {
+    summary: summaryData?.[0],
+    debit_entry: data?.[0],
+    credit_entry: data?.[1],
+    transaction_hash: stellar_transaction_hash
+  };
+};
+
 export const createTransactionRequest = async ({
   sender_id,
   receiver_id,
@@ -516,6 +619,107 @@ export const getWalletAmounts = async (userSecret: string) => {
       }
     }
     
+    throw error;
+  }
+};
+
+// Get all transactions and wallet details in a single comprehensive response
+export const getAllTransactionsAndWalletDetails = async () => {
+  try {
+    // Get all transactions
+    const { data: transactionsData, error: transactionsError } = await supabase
+      .from('transactions')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (transactionsError) {
+      console.warn('Could not fetch transactions:', transactionsError.message);
+    }
+
+    // Get services data (which also contains transaction-like data)
+    const { data: servicesData, error: servicesError } = await supabase
+      .from('services')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (servicesError) {
+      console.warn('Could not fetch services:', servicesError.message);
+    }
+
+    // Get wallet data from the wallets table
+    const { data: walletData, error: walletError } = await supabase
+      .from('wallets')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (walletError) {
+      console.warn('Could not fetch wallet details:', walletError.message);
+    }
+
+    // Get user profile data (which includes wallet info)
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, username, email, public_key, role, entity_belongs, entity_admin_name, created_at, updated_at')
+      .order('created_at', { ascending: false });
+
+    if (profileError) {
+      console.warn('Could not fetch profile data:', profileError.message);
+    }
+
+    // Get users data (alternative user storage)
+    const { data: usersData, error: usersError } = await supabase
+      .from('users')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (usersError) {
+      console.warn('Could not fetch users data:', usersError.message);
+    }
+
+    // Get wallet balance data
+    const { data: balanceData, error: balanceError } = await supabase
+      .from('wallet_balances')
+      .select('*')
+      .order('updated_at', { ascending: false });
+
+    if (balanceError) {
+      console.warn('Could not fetch wallet balance data:', balanceError.message);
+    }
+
+    return {
+      transactions: {
+        count: transactionsData?.length || 0,
+        data: transactionsData || []
+      },
+      services: {
+        count: servicesData?.length || 0,
+        data: servicesData || []
+      },
+      wallets: {
+        count: walletData?.length || 0,
+        data: walletData || []
+      },
+      profiles: {
+        count: profileData?.length || 0,
+        data: profileData || []
+      },
+      users: {
+        count: usersData?.length || 0,
+        data: usersData || []
+      },
+      wallet_balances: {
+        count: balanceData?.length || 0,
+        data: balanceData || []
+      },
+      summary: {
+        total_transactions: (transactionsData?.length || 0) + (servicesData?.length || 0),
+        total_wallets: (walletData?.length || 0) + (profileData?.length || 0) + (usersData?.length || 0),
+        total_tracked_balances: balanceData?.length || 0,
+        last_updated: new Date().toISOString()
+      }
+    };
+  } catch (error) {
+    console.error('Error fetching all transactions and wallet details:', error);
     throw error;
   }
 };

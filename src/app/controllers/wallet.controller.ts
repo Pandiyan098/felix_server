@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { createTwoWallets, makeCustomPayment, makeBDPayment, createTrustlineForAccount, createAccountWithDetails, logTransaction, createTransactionRequest, getWalletAmounts, getAllServices } from '../services/wallet.service';
+import { createTwoWallets, makeCustomPayment, makeBDPayment, createTrustlineForAccount, createAccountWithDetails, logTransaction, createTransactionRequest, getWalletAmounts, getAllServices, getAllTransactionsAndWalletDetails } from '../services/wallet.service';
 import fetch from 'node-fetch';
 import { supabase } from '../../config/supabase';
 import * as StellarSdk from 'stellar-sdk';
@@ -127,10 +127,10 @@ export const getTransactionsByUserHandler = async (req: Request, res: Response) 
       return res.status(400).json({ error: 'Missing or invalid user_id' });
     }
     const { data, error } = await supabase
-      .from('services')
+      .from('transactions')
       .select('*')
       .eq('sender_id', user_id)
-      .eq('status', status || "completed")
+      // .eq('status', status || "completed")
       .order('created_at', { ascending: false });
     if (error) {
       return res.status(500).json({ error: error.message });
@@ -359,6 +359,15 @@ export const getAllServicesHandler = async (req: Request, res: Response) => {
   }
 };
 
+export const getAllTransactionsAndWalletDetailsHandler = async (_req: Request, res: Response) => {
+  try {
+    const data = await getAllTransactionsAndWalletDetails();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
 export const makeBDPaymentById = async (req: Request, res: Response) => {
   try {
     const { senderSecret, receiverPublic, amount } = req.body;
@@ -384,4 +393,4 @@ export const makeBDPaymentById = async (req: Request, res: Response) => {
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }
-}
+};
