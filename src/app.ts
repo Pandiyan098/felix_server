@@ -7,6 +7,8 @@ import users from './app/routes/user.route';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import { authenticateToken } from './app/middleware/auth.middleware';
+import { swaggerSpec, swaggerUi, swaggerUiOptions } from './config/swagger';
 
 // Load environment variables
 dotenv.config();
@@ -17,6 +19,20 @@ app.use(cors());
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+
+// Swagger documentation (should be available without authentication)
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// API routes JSON endpoint for Swagger
+app.get('/api/docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
 
 app.use('/api/fetch', authRoutes);
 app.use('/api', walletRoutes);
