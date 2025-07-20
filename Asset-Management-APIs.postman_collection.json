@@ -1,0 +1,349 @@
+{
+  "info": {
+    "_postman_id": "asset-management-apis",
+    "name": "Asset Management APIs",
+    "description": "Collection for testing custom asset management endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "assetId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Asset Management",
+      "item": [
+        {
+          "name": "1. Create Custom Asset Issuer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.asset && jsonData.asset.asset_id) {",
+                  "    pm.environment.set(\"assetId\", jsonData.asset.asset_id);",
+                  "    console.log(\"Asset ID: \" + jsonData.asset.asset_id);",
+                  "}",
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asset_code\": \"MYTOKEN\",\n  \"asset_name\": \"My Custom Token\",\n  \"description\": \"A custom token for testing purposes\",\n  \"total_supply\": 1000000,\n  \"category\": \"utility\",\n  \"icon_url\": \"https://example.com/token-icon.png\",\n  \"website\": \"https://example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets"
+              ]
+            },
+            "description": "Creates a new custom asset with a Stellar issuer account. Requires admin or super admin role."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Get All Assets",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets?page=1&limit=10&is_active=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "is_active",
+                  "value": "true"
+                },
+                {
+                  "key": "category",
+                  "value": "utility",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Retrieves all assets with optional filtering by status and category. Supports pagination."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Get Asset by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/{{assetId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets",
+                "{{assetId}}"
+              ]
+            },
+            "description": "Retrieves detailed information about a specific asset by its ID."
+          },
+          "response": []
+        },
+        {
+          "name": "4. Toggle Asset Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/{{assetId}}/toggle-status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets",
+                "{{assetId}}",
+                "toggle-status"
+              ]
+            },
+            "description": "Toggles the active status of an asset. Requires admin or super admin role."
+          },
+          "response": []
+        },
+        {
+          "name": "5. Issue Asset to Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recipient_public_key\": \"GDQP2KPQGKIHYJGXNUIYOMHARUARCA7DJT5FO2FFOOKY3B2WSQHG4W37\",\n  \"amount\": 100.50\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/{{assetId}}/issue",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets",
+                "{{assetId}}",
+                "issue"
+              ]
+            },
+            "description": "Issues a specified amount of the custom asset to a Stellar account. Requires admin or super admin role."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Error Testing",
+      "item": [
+        {
+          "name": "Create Asset - Invalid Code (Too Long)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asset_code\": \"TOOLONGASSETCODE\",\n  \"asset_name\": \"Invalid Asset\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets"
+              ]
+            },
+            "description": "Tests validation error for asset code that is too long (should return 400)"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Asset - Missing Required Field",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asset_code\": \"TEST\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/assets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets"
+              ]
+            },
+            "description": "Tests validation error for missing asset_name field (should return 400)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Asset - Invalid UUID Format",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/invalid-uuid",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets",
+                "invalid-uuid"
+              ]
+            },
+            "description": "Tests validation error for invalid UUID format (should return 400)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Asset - Non-existent ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/assets/00000000-0000-0000-0000-000000000000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "assets",
+                "00000000-0000-0000-0000-000000000000"
+              ]
+            },
+            "description": "Tests error for non-existent asset ID (should return 404)"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

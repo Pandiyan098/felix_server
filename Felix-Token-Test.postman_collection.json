@@ -1,0 +1,315 @@
+{
+  "info": {
+    "_postman_id": "felix-auth-test-v2",
+    "name": "Felix Token Test Collection",
+    "description": "Complete collection to test Keycloak token authentication for Felix service",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "1. Get Keycloak Token (Your Credentials)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test for successful response",
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// If successful, save the token",
+                  "if (pm.response.code === 200) {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.success && jsonData.data && jsonData.data.access_token) {",
+                  "        pm.environment.set('accessToken', jsonData.data.access_token);",
+                  "        pm.environment.set('refreshToken', jsonData.data.refresh_token);",
+                  "        console.log('✅ Access Token saved successfully');",
+                  "        console.log('Token type:', jsonData.data.token_type);",
+                  "        console.log('Expires in:', jsonData.data.expires_in, 'seconds');",
+                  "    }",
+                  "} else {",
+                  "    console.log('❌ Failed to get token:', pm.response.text());",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"pandiyan\",\n    \"password\": \"1234\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/fetch/token",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "fetch", "token"]
+            },
+            "description": "Get access token using your Keycloak credentials (pandiyan/1234)"
+          },
+          "response": []
+        },
+        {
+          "name": "2. Test Direct Keycloak Endpoint",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// This tests the Keycloak endpoint directly",
+                  "if (pm.response.code === 200) {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.environment.set('accessToken', jsonData.access_token);",
+                  "    pm.environment.set('refreshToken', jsonData.refresh_token);",
+                  "    console.log('✅ Direct Keycloak token retrieved');",
+                  "} else {",
+                  "    console.log('❌ Direct Keycloak failed:', pm.response.text());",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "felix-service-client",
+                  "type": "text"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "iUj84dYKd3q1sAzWj6YHxv1H6ruXienz",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "pandiyan",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "1234",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "https://iam-uat.cateina.com/realms/Cateina_Felix_Op/protocol/openid-connect/token",
+              "protocol": "https",
+              "host": ["iam-uat.cateina.com"],
+              "path": ["realms", "Cateina_Felix_Op", "protocol", "openid-connect", "token"]
+            },
+            "description": "Direct call to Keycloak token endpoint (for debugging)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Protected Endpoints",
+      "item": [
+        {
+          "name": "3. Test Protected Route - Get Entities",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "description": "JWT token from Keycloak"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/entities",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "entities"]
+            },
+            "description": "Test a protected endpoint that doesn't require specific roles"
+          },
+          "response": []
+        },
+        {
+          "name": "4. Test Role-Protected Route - Create Entity",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "description": "JWT token from Keycloak"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Test Entity\",\n    \"code\": \"TEST_001\",\n    \"description\": \"Test entity for role validation\",\n    \"generate_stellar_keys\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/entities",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "entities"]
+            },
+            "description": "Test a protected endpoint that requires super_admin or table_admin role"
+          },
+          "response": []
+        },
+        {
+          "name": "5. Check User Info from Token",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Decode JWT token to see user info",
+                  "const token = pm.environment.get('accessToken');",
+                  "if (token) {",
+                  "    try {",
+                  "        const base64Url = token.split('.')[1];",
+                  "        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');",
+                  "        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {",
+                  "            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);",
+                  "        }).join(''));",
+                  "        const payload = JSON.parse(jsonPayload);",
+                  "        console.log('Token payload:', JSON.stringify(payload, null, 2));",
+                  "        console.log('Username:', payload.preferred_username);",
+                  "        console.log('Email:', payload.email);",
+                  "        console.log('Roles:', payload.realm_access?.roles);",
+                  "    } catch (e) {",
+                  "        console.log('Could not decode token:', e);",
+                  "    }",
+                  "} else {",
+                  "    console.log('No access token found in environment');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Simple health check to verify token decoding in pre-request script"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Debug & Health",
+      "item": [
+        {
+          "name": "6. Test Keycloak Connection",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/test-keycloak",
+              "host": ["{{baseUrl}}"],
+              "path": ["test-keycloak"]
+            },
+            "description": "Test Keycloak connectivity and public keys"
+          },
+          "response": []
+        },
+        {
+          "name": "7. Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Basic health check of the Felix service"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global pre-request script",
+          "console.log('Making request to:', pm.request.url.toString());"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000",
+      "type": "string"
+    },
+    {
+      "key": "keycloakUrl",
+      "value": "https://iam-uat.cateina.com",
+      "type": "string"
+    },
+    {
+      "key": "realm",
+      "value": "Cateina_Felix_Op",
+      "type": "string"
+    },
+    {
+      "key": "clientId",
+      "value": "felix-service-client",
+      "type": "string"
+    }
+  ]
+}

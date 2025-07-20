@@ -350,6 +350,224 @@ const options = {
               description: 'Last update timestamp'
             }
           }
+        },
+        Asset: {
+          type: 'object',
+          properties: {
+            asset_id: {
+              type: 'string',
+              format: 'uuid',
+              description: 'Asset unique identifier'
+            },
+            asset_code: {
+              type: 'string',
+              maxLength: 12,
+              pattern: '^[A-Z0-9]+$',
+              description: 'Asset code (1-12 characters, uppercase letters and numbers)'
+            },
+            asset_name: {
+              type: 'string',
+              maxLength: 50,
+              description: 'Asset display name'
+            },
+            asset_provider: {
+              type: 'string',
+              maxLength: 100,
+              description: 'Asset provider name'
+            },
+            asset_provider_public_key: {
+              type: 'string',
+              maxLength: 56,
+              pattern: '^G[0-9A-Z]{55}$',
+              description: 'Stellar public key of the asset issuer'
+            },
+            description: {
+              type: 'string',
+              description: 'Asset description'
+            },
+            total_supply: {
+              type: 'number',
+              format: 'decimal',
+              description: 'Total supply of the asset'
+            },
+            category: {
+              type: 'string',
+              maxLength: 50,
+              description: 'Asset category (e.g., utility, security, stablecoin)'
+            },
+            icon_url: {
+              type: 'string',
+              format: 'uri',
+              description: 'URL to asset icon'
+            },
+            website: {
+              type: 'string',
+              format: 'uri',
+              description: 'Asset website URL'
+            },
+            is_active: {
+              type: 'boolean',
+              description: 'Whether the asset is active'
+            },
+            created_by: {
+              type: 'string',
+              format: 'uuid',
+              description: 'ID of user who created the asset'
+            },
+            created_at: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Creation timestamp'
+            },
+            updated_at: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Last update timestamp'
+            }
+          },
+          required: ['asset_id', 'asset_code', 'asset_name', 'asset_provider', 'asset_provider_public_key']
+        },
+        AssetCreateRequest: {
+          type: 'object',
+          properties: {
+            asset_code: {
+              type: 'string',
+              maxLength: 12,
+              pattern: '^[A-Z0-9]+$',
+              description: 'Asset code (1-12 characters, uppercase letters and numbers)',
+              example: 'MYTOKEN'
+            },
+            asset_name: {
+              type: 'string',
+              maxLength: 50,
+              description: 'Asset display name',
+              example: 'My Custom Token'
+            },
+            description: {
+              type: 'string',
+              maxLength: 500,
+              description: 'Asset description',
+              example: 'A custom token for utility purposes'
+            },
+            total_supply: {
+              type: 'number',
+              format: 'decimal',
+              description: 'Total supply of the asset',
+              example: 1000000
+            },
+            category: {
+              type: 'string',
+              maxLength: 50,
+              description: 'Asset category',
+              example: 'utility'
+            },
+            icon_url: {
+              type: 'string',
+              format: 'uri',
+              description: 'URL to asset icon',
+              example: 'https://example.com/icon.png'
+            },
+            website: {
+              type: 'string',
+              format: 'uri',
+              description: 'Asset website URL',
+              example: 'https://example.com'
+            }
+          },
+          required: ['asset_code', 'asset_name']
+        },
+        AssetIssueRequest: {
+          type: 'object',
+          properties: {
+            recipient_public_key: {
+              type: 'string',
+              pattern: '^G[0-9A-Z]{55}$',
+              description: 'Recipient Stellar public key',
+              example: 'GDQP2KPQGKIHYJGXNUIYOMHARUARCA7DJT5FO2FFOOKY3B2WSQHG4W37'
+            },
+            amount: {
+              type: 'number',
+              format: 'decimal',
+              minimum: 0.0000001,
+              description: 'Amount to issue',
+              example: 100.50
+            }
+          },
+          required: ['recipient_public_key', 'amount']
+        },
+        AssetResponse: {
+          allOf: [
+            {
+              type: 'object',
+              properties: {
+                success: {
+                  type: 'boolean',
+                  description: 'Whether the request was successful'
+                },
+                message: {
+                  type: 'string',
+                  description: 'Response message'
+                }
+              }
+            },
+            {
+              oneOf: [
+                {
+                  type: 'object',
+                  properties: {
+                    asset: {
+                      $ref: '#/components/schemas/Asset'
+                    }
+                  }
+                },
+                {
+                  type: 'object',
+                  properties: {
+                    data: {
+                      type: 'object',
+                      properties: {
+                        assets: {
+                          type: 'array',
+                          items: {
+                            $ref: '#/components/schemas/Asset'
+                          }
+                        },
+                        pagination: {
+                          type: 'object',
+                          properties: {
+                            page: {
+                              type: 'integer',
+                              description: 'Current page'
+                            },
+                            limit: {
+                              type: 'integer',
+                              description: 'Items per page'
+                            },
+                            total: {
+                              type: 'integer',
+                              description: 'Total number of items'
+                            },
+                            total_pages: {
+                              type: 'integer',
+                              description: 'Total number of pages'
+                            },
+                            has_next: {
+                              type: 'boolean',
+                              description: 'Whether there is a next page'
+                            },
+                            has_prev: {
+                              type: 'boolean',
+                              description: 'Whether there is a previous page'
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
         }
       }
     },
@@ -382,12 +600,17 @@ const options = {
       {
         name: 'Memos',
         description: 'Memo management endpoints'
+      },
+      {
+        name: 'Assets',
+        description: 'Custom asset management endpoints'
       }
     ]
   },
   apis: [
     './src/app/routes/*.ts',
-    './src/app/controllers/*.ts'
+    './src/app/controllers/*.ts',
+    './src/app/docs/*.ts'
   ]
 };
 
