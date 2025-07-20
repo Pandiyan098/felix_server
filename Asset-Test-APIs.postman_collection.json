@@ -1,0 +1,192 @@
+{
+  "info": {
+    "_postman_id": "asset-test-apis",
+    "name": "Asset Management Test APIs (No Auth)",
+    "description": "Collection for testing asset management endpoints without authentication",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000",
+      "type": "string"
+    },
+    {
+      "key": "assetId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Test Asset Management (No Auth)",
+      "item": [
+        {
+          "name": "1. Create Custom Asset Issuer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.asset && jsonData.asset.asset_id) {",
+                  "    pm.environment.set(\"assetId\", jsonData.asset.asset_id);",
+                  "    console.log(\"Asset ID: \" + jsonData.asset.asset_id);",
+                  "}",
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asset_code\": \"TESTCOIN\",\n  \"asset_name\": \"Test Coin\",\n  \"description\": \"A test coin for testing purposes\",\n  \"total_supply\": 1000000,\n  \"category\": \"utility\",\n  \"icon_url\": \"https://example.com/test-icon.png\",\n  \"website\": \"https://example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/test/assets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "test",
+                "assets"
+              ]
+            },
+            "description": "Creates a new custom asset without authentication - FOR TESTING ONLY"
+          },
+          "response": []
+        },
+        {
+          "name": "2. Get All Assets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/test/assets?page=1&limit=10&is_active=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "test", 
+                "assets"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "is_active",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "Retrieves all assets without authentication - FOR TESTING ONLY"
+          },
+          "response": []
+        },
+        {
+          "name": "3. Get Asset by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/test/assets/{{assetId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "test",
+                "assets",
+                "{{assetId}}"
+              ]
+            },
+            "description": "Retrieves asset details by ID without authentication - FOR TESTING ONLY"
+          },
+          "response": []
+        },
+        {
+          "name": "4. Toggle Asset Status",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/test/assets/{{assetId}}/toggle-status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "test",
+                "assets",
+                "{{assetId}}",
+                "toggle-status"
+              ]
+            },
+            "description": "Toggles asset status without authentication - FOR TESTING ONLY"
+          },
+          "response": []
+        },
+        {
+          "name": "5. Issue Asset to Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recipient_public_key\": \"GDQP2KPQGKIHYJGXNUIYOMHARUARCA7DJT5FO2FFOOKY3B2WSQHG4W37\",\n  \"amount\": 100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/test/assets/{{assetId}}/issue",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "test",
+                "assets",
+                "{{assetId}}",
+                "issue"
+              ]
+            },
+            "description": "Issues asset to account without authentication - FOR TESTING ONLY"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

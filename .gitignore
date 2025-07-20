@@ -28,4 +28,10 @@ Thumbs.db
 coverage/
 
 # Misc
-*.log 
+*.log
+
+# 🔒 Test files and folders
+**/*.spec.ts
+**/*.test.ts
+tests/
+__tests__/

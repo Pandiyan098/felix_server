@@ -1,0 +1,69 @@
+{
+  "info": {
+    "name": "Felix Auth Test",
+    "description": "Test collection for the simplified token API",
+    "version": "1.0.0"
+  },
+  "item": [
+    {
+      "name": "Get Keycloak Token",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"username\": \"your-username\",\n    \"password\": \"your-password\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/fetch/token",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "fetch", "token"]
+        },
+        "description": "Get access token from Keycloak using username/password"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var jsonData = pm.response.json();",
+              "    pm.environment.set('accessToken', jsonData.data.access_token);",
+              "    console.log('Access Token saved:', jsonData.data.access_token);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test Protected Endpoint",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/entities",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "entities"]
+        },
+        "description": "Test a protected endpoint with the token"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    }
+  ]
+}
