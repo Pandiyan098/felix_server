@@ -51,3 +51,12 @@ export const getUsersByGroup = async (req: Request, res: Response) => {
     res.status(500).json({ error: (error as Error).message });
   }
 };
+
+export const getAllUsers = async (req: Request, res: Response) => {
+  try {
+    const result = await userService.getAllUsers();
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
