@@ -160,3 +160,20 @@ export const getUsersByGroup = async (groupId: string) => {
     throw error;
   }
 };
+
+export const getAllUsers = async () => {
+  try {
+    // Fetch all users from the database
+    const users = await userDao.getAllUsers();
+    
+    // Return formatted response
+    return {
+      message: `Successfully fetched all users`,
+      count: users.length,
+      users: users
+    };
+  } catch (error) {
+    console.error('Error in getAllUsers service:', error);
+    throw error;
+  }
+};
