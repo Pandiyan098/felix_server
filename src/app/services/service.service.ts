@@ -13,6 +13,7 @@ import { logMemoTransaction } from './wallet.service';
 import { supabase } from '../../config/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { STELLAR_CONFIG } from '../../config/stellar';
+import { transformServiceWithIST, transformProposalWithIST } from '../../utils/timezone.utils';
 
 const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org');
 
@@ -154,11 +155,15 @@ const updateWalletBalancesAfterServicePayment = async (
 };
 
 export const createServiceRequest = async ({ clientKey, description, budget, title, requirements }: { clientKey: string, description: string, budget: number, title: string, requirements: string }) => {
-  return await createRequest(clientKey, description, budget, title, requirements);
+  const createdService = await createRequest(clientKey, description, budget, title, requirements);
+  // Transform timestamps to IST for the created service
+  return transformServiceWithIST(createdService);
 };
 
 export const proposeService = async ({ requestId, providerKey, proposalText, bidAmount }: { requestId: string, providerKey: string, proposalText: string, bidAmount: number }) => {
-  return await createProposal(requestId, providerKey, proposalText, bidAmount);
+  const createdProposal = await createProposal(requestId, providerKey, proposalText, bidAmount);
+  // Transform timestamps to IST for the created proposal
+  return transformProposalWithIST(createdProposal);
 };
 
 export const acceptProposal = async ({ proposalId }: { proposalId: string }) => {
@@ -370,7 +375,9 @@ export const payForService = async ({
 export const getAllService = async () => {
   try {
     const services = await getServicesDao();
-    return services;
+    // Transform timestamps to IST for all services
+    const servicesWithIST = services.map(service => transformServiceWithIST(service));
+    return servicesWithIST;
   } catch (error) {
     throw new Error('Failed to retrieve services');
   }
@@ -381,8 +388,10 @@ export const getAllproposal = async (requestId:string) => {
     console.log('Fetching proposals for requestId service:', requestId);
     
     const proposals = await getAllProposalsByRequestId(requestId);
+    // Transform timestamps to IST for all proposals
+    const proposalsWithIST = proposals.map(proposal => transformProposalWithIST(proposal));
     
-    return proposals;
+    return proposalsWithIST;
   } catch (error) {
     throw new Error('Failed to retrieve proposals');
   }
