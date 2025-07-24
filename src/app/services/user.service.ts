@@ -41,7 +41,7 @@ export const createUserWithKeypair = async (userData: any) => {
   // 1. Attempt to create the user in Keycloak first.
   // This ensures Keycloak authentication is set up before proceeding with other data.
   try {
-    await createKeycloakUser(userData.username, userData.email, userData.password);
+    await createKeycloakUser(userData.username, userData.email, userData.firstname, userData.lastname, userData.password);
   } catch (error: any) {
     // If Keycloak user creation fails, log the error and re-throw to stop the process.
     console.error('Failed to create user in Keycloak, aborting user creation:', error.message);
@@ -56,6 +56,8 @@ export const createUserWithKeypair = async (userData: any) => {
     id: uuidv4(), // Generate a unique UUID for the user's database entry
     username: userData.username,
     email: userData.email,
+    firstname: userData.firstname,
+    lastname: userData.lastname,
     role: userData.role,
     password: userData.password, // IMPORTANT: In a production app, hash passwords before storing!
     entity_belongs_to: userData.entity_belongs_to,

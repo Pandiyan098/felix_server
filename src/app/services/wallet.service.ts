@@ -445,8 +445,8 @@ export const logMemoTransaction = async ({
     {
       product_id: service_id,
       user_id: receiver_user_id,
-      sender_id: sender_public_key, // Store Stellar public key
-      receiver_id: receiver_public_key, // Store Stellar public key
+      sender_id: receiver_public_key, // Credit entry: receiver is the sender from their perspective
+      receiver_id: sender_public_key, // Credit entry: sender becomes the receiver from their perspective
       table_admin_id,
       amount: `+${formattedAmount}`, // Credit entry with plus sign
       currency: transactionCurrency,

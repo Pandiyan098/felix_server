@@ -158,11 +158,13 @@ export const getKeycloakAdminToken = async (): Promise<string> => {
  * It obtains an admin token internally before making the user creation request.
  * @param {string} username - The username for the new Keycloak user.
  * @param {string} email - The email for the new Keycloak user.
+ * @param {string} firstname - The first name for the new Keycloak user.
+ * @param {string} lastname - The last name for the new Keycloak user.
  * @param {string} password - The password for the new Keycloak user.
  * @returns {Promise<void>}
  * @throws {Error} If user creation in Keycloak fails.
  */
-export const createKeycloakUser = async (username: string, email: string, password: string): Promise<void> => {
+export const createKeycloakUser = async (username: string, email: string, firstname: string, lastname: string, password: string): Promise<void> => {
   const adminToken = await getKeycloakAdminToken(); // Get token for this operation
 
   try {
@@ -172,16 +174,18 @@ export const createKeycloakUser = async (username: string, email: string, passwo
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${adminToken}`,
       },
-      body: JSON.stringify({
-        username: username,
-        email: email,
-        enabled: true, // User is enabled by default
-        credentials: [{
-          type: 'password',
-          value: password,
-          temporary: false, // Password is not temporary
-        }],
-      }),
+  body: JSON.stringify({
+    username: username,
+    email: email,
+    firstName: firstname,
+    lastName: lastname,
+    enabled: true, // User is enabled by default
+    credentials: [{
+      type: 'password',
+      value: password,
+      temporary: false, // Password is not temporary
+    }],
+  }),
     });
 
     if (!response.ok) {

@@ -29,7 +29,16 @@ app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOpti
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+  const utcTime = new Date().toISOString();
+  // Convert to IST for demonstration
+  const moment = require('moment-timezone');
+  const istTime = moment(utcTime).tz('Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss z');
+  
+  res.json({ 
+    status: 'OK', 
+    timestamp_utc: utcTime,
+    timestamp_ist: istTime
+  });
 });
 
 // Keycloak connectivity test endpoint
