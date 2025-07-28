@@ -76,6 +76,11 @@ export const createMemo = async (creatorKey: string, memo: string, bdAmount: num
     throw new Error('Invalid creatorKey: must be a valid Stellar public key starting with G');
   }
   
+  // Validate memo length (Stellar text memos are limited to 28 bytes)
+  if (memo && memo.length > 28) {
+    throw new Error('Memo text too long: maximum 28 characters allowed for Stellar text memos');
+  }
+  
   // Validate and format the amount
   if (isNaN(bdAmount) || bdAmount <= 0) {
     throw new Error('Invalid amount: must be a positive number');
@@ -167,7 +172,7 @@ export const payForMemo = async (buyerSecret: string, memoId: string) => {
       asset: blueDollar,
       amount: amount
     }))
-    .addMemo(StellarSdk.Memo.text(memoData.memo))
+    .addMemo(StellarSdk.Memo.text(memoData.memo.substring(0, 28)))
     .setTimeout(STELLAR_CONFIG.TRANSACTION_TIMEOUT)
     .build();
 
