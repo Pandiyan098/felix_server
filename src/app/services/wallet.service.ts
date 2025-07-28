@@ -402,31 +402,6 @@ export const logMemoTransaction = async ({
   const transactionCurrency = currency || 'BLUEDOLLAR';
   const transactionStatus = status || 'pending';
   
-  // Insert summary transaction row with sender_id and receiver_id containing Stellar public keys
-  const summaryRow = {
-    product_id: service_id,
-    user_id: sender_user_id,      // Add user_id here to satisfy NOT NULL constraint
-    sender_id: sender_public_key, // Store Stellar public key
-    receiver_id: receiver_public_key, // Store Stellar public key
-    amount: formattedAmount,
-    currency: transactionCurrency,
-    status: transactionStatus,
-    stellar_transaction_hash,
-    table_admin_id,
-    created_at: now,
-    updated_at: now,
-  };
-
-  const { data: summaryData, error: summaryError } = await supabase
-    .from('transactions')
-    .insert([summaryRow])
-    .select();
-
-  if (summaryError) {
-    console.error('Failed to log summary transaction:', summaryError);
-    throw new Error(`Failed to log summary transaction: ${summaryError.message}`);
-  }
-  
   // Create two transaction entries: one debit (sender) and one credit (receiver)
   const transactionEntries = [
     {
@@ -469,7 +444,6 @@ export const logMemoTransaction = async ({
   }
   
   return {
-    summary: summaryData?.[0],
     debit_entry: data?.[0],
     credit_entry: data?.[1],
     transaction_hash: stellar_transaction_hash
